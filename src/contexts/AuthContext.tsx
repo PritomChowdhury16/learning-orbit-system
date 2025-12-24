@@ -1,16 +1,34 @@
+/**
+ * AuthContext - Manages user login state
+ * 
+ * Simple explanation:
+ * - This file keeps track of who is logged in
+ * - It provides user info to all pages
+ */
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase, Profile } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
+// Profile type - what info we store about users
+interface Profile {
+  id: string;
+  email: string;
+  full_name: string;
+  role: 'student' | 'teacher';
+  roll_number?: string;
+  course?: string;
+  department?: string;
+}
+
+// What this context provides to other components
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
   signOut: () => Promise<void>;
-  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,6 +40,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Get user profile from database
   const fetchProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -37,14 +56,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const refreshProfile = async () => {
-    if (user) {
-      await fetchProfile(user.id);
-    }
-  };
-
+  // Listen for login/logout events
   useEffect(() => {
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
@@ -62,7 +75,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     );
 
-    // Check for existing session
+    // Check if already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -77,6 +90,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Sign out function
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -92,12 +106,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
+// Custom hook to use auth in any component
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

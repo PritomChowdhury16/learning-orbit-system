@@ -1,41 +1,46 @@
+/**
+ * Auth Page - Login and Signup
+ * 
+ * Simple explanation:
+ * - Users can login with email/password
+ * - New users can create an account
+ * - Students need: name, email, password, roll number
+ * - Teachers need: name, email, password, department
+ */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { GraduationCap, BookOpen } from 'lucide-react';
+import { GraduationCap } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Auth = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('login');
+  
+  // Toggle between login and signup
+  const [isLogin, setIsLogin] = useState(true);
 
-  // Login state
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-
-  // Signup state
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
+  // Form fields
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState<'student' | 'teacher'>('student');
   const [rollNumber, setRollNumber] = useState('');
-  const [course, setCourse] = useState('');
   const [department, setDepartment] = useState('');
 
+  // Handle Login
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
-        password: loginPassword,
+        email,
+        password,
       });
 
       if (error) throw error;
@@ -51,24 +56,9 @@ const Auth = () => {
     }
   };
 
+  // Handle Signup
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!fullName || !signupEmail || !signupPassword || !role) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    if (role === 'student' && !rollNumber) {
-      toast.error('Roll number is required for students');
-      return;
-    }
-
-    if (role === 'teacher' && !department) {
-      toast.error('Department is required for teachers');
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -79,14 +69,13 @@ const Auth = () => {
 
       if (role === 'student') {
         metadata.roll_number = rollNumber;
-        metadata.course = course;
       } else {
         metadata.department = department;
       }
 
       const { data, error } = await supabase.auth.signUp({
-        email: signupEmail,
-        password: signupPassword,
+        email,
+        password,
         options: {
           data: metadata,
           emailRedirectTo: `${window.location.origin}/dashboard`,
@@ -118,147 +107,150 @@ const Auth = () => {
           <CardTitle className="text-3xl font-bold">EduTrackers</CardTitle>
           <CardDescription>Student & Teacher Management System</CardDescription>
         </CardHeader>
+
         <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
+          {/* Toggle Buttons */}
+          <div className="flex mb-6">
+            <Button 
+              variant={isLogin ? "default" : "outline"} 
+              className="flex-1 rounded-r-none"
+              onClick={() => setIsLogin(true)}
+            >
+              Login
+            </Button>
+            <Button 
+              variant={!isLogin ? "default" : "outline"} 
+              className="flex-1 rounded-l-none"
+              onClick={() => setIsLogin(false)}
+            >
+              Sign Up
+            </Button>
+          </div>
 
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
-                  <Input
-                    id="login-email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Password</Label>
-                  <Input
-                    id="login-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Signing in...' : 'Sign In'}
-                </Button>
-              </form>
-            </TabsContent>
+          {/* Login Form */}
+          {isLogin ? (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? 'Signing in...' : 'Sign In'}
+              </Button>
+            </form>
+          ) : (
+            /* Signup Form */
+            <form onSubmit={handleSignup} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Full Name</Label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  placeholder="Your Name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="signupEmail">Email</Label>
+                <Input
+                  id="signupEmail"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="signupPassword">Password</Label>
+                <Input
+                  id="signupPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
 
-            <TabsContent value="signup">
-              <form onSubmit={handleSignup} className="space-y-4">
+              {/* Role Selection */}
+              <div className="space-y-2">
+                <Label>I am a:</Label>
+                <div className="flex gap-2">
+                  <Button 
+                    type="button"
+                    variant={role === 'student' ? "default" : "outline"} 
+                    className="flex-1"
+                    onClick={() => setRole('student')}
+                  >
+                    Student
+                  </Button>
+                  <Button 
+                    type="button"
+                    variant={role === 'teacher' ? "default" : "outline"} 
+                    className="flex-1"
+                    onClick={() => setRole('teacher')}
+                  >
+                    Teacher
+                  </Button>
+                </div>
+              </div>
+
+              {/* Student: Roll Number */}
+              {role === 'student' && (
                 <div className="space-y-2">
-                  <Label htmlFor="full-name">Full Name</Label>
+                  <Label htmlFor="rollNumber">Roll Number</Label>
                   <Input
-                    id="full-name"
+                    id="rollNumber"
                     type="text"
-                    placeholder="John Doe"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="2024001"
+                    value={rollNumber}
+                    onChange={(e) => setRollNumber(e.target.value)}
                     required
                   />
                 </div>
+              )}
+
+              {/* Teacher: Department */}
+              {role === 'teacher' && (
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label htmlFor="department">Department</Label>
                   <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={signupEmail}
-                    onChange={(e) => setSignupEmail(e.target.value)}
+                    id="department"
+                    type="text"
+                    placeholder="Computer Science"
+                    value={department}
+                    onChange={(e) => setDepartment(e.target.value)}
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={signupPassword}
-                    onChange={(e) => setSignupPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <Select value={role} onValueChange={(value: 'student' | 'teacher') => setRole(value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="student">
-                        <div className="flex items-center">
-                          <BookOpen className="mr-2 h-4 w-4" />
-                          Student
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="teacher">
-                        <div className="flex items-center">
-                          <GraduationCap className="mr-2 h-4 w-4" />
-                          Teacher
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              )}
 
-                {role === 'student' && (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="roll-number">Roll Number</Label>
-                      <Input
-                        id="roll-number"
-                        type="text"
-                        placeholder="2024001"
-                        value={rollNumber}
-                        onChange={(e) => setRollNumber(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="course">Course</Label>
-                      <Input
-                        id="course"
-                        type="text"
-                        placeholder="Computer Science"
-                        value={course}
-                        onChange={(e) => setCourse(e.target.value)}
-                      />
-                    </div>
-                  </>
-                )}
-
-                {role === 'teacher' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="department">Department</Label>
-                    <Input
-                      id="department"
-                      type="text"
-                      placeholder="Computer Science"
-                      value={department}
-                      onChange={(e) => setDepartment(e.target.value)}
-                      required
-                    />
-                  </div>
-                )}
-
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Creating account...' : 'Create Account'}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? 'Creating account...' : 'Create Account'}
+              </Button>
+            </form>
+          )}
         </CardContent>
       </Card>
     </div>
