@@ -4,11 +4,13 @@
  * Shows:
  * - Welcome message with student name
  * - Basic info cards (roll number, course, email)
+ * - Announcements from teachers
  */
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { User, BookOpen, Mail } from 'lucide-react';
 import DashboardLayout from './DashboardLayout';
+import Announcements from '@/components/Announcements';
 
 const StudentDashboard = () => {
   const { profile } = useAuth();
@@ -22,13 +24,13 @@ const StudentDashboard = () => {
             Welcome, {profile?.full_name}! 👋
           </h2>
           <p className="text-muted-foreground mt-2">
-            This is your student dashboard. Here you can see your basic information.
+            This is your student dashboard. Here you can see your info and announcements.
           </p>
         </CardContent>
       </Card>
 
       {/* Info Cards */}
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-3 mb-6">
         {/* Roll Number */}
         <Card>
           <CardHeader className="flex flex-row items-center space-x-4 pb-2">
@@ -74,6 +76,9 @@ const StudentDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Announcements Section */}
+      <Announcements />
     </DashboardLayout>
   );
 };
