@@ -4,11 +4,15 @@
  * Shows:
  * - Welcome message with teacher name
  * - Basic info cards (department, email)
+ * - Post announcements
+ * - View all students
  */
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building, Mail } from 'lucide-react';
 import DashboardLayout from './DashboardLayout';
+import Announcements from '@/components/Announcements';
+import StudentList from '@/components/StudentList';
 
 const TeacherDashboard = () => {
   const { profile } = useAuth();
@@ -22,13 +26,13 @@ const TeacherDashboard = () => {
             Welcome, {profile?.full_name}! 👋
           </h2>
           <p className="text-muted-foreground mt-2">
-            This is your teacher dashboard. Here you can see your basic information.
+            This is your teacher dashboard. You can post announcements and see all students.
           </p>
         </CardContent>
       </Card>
 
       {/* Info Cards */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2 mb-6">
         {/* Department */}
         <Card>
           <CardHeader className="flex flex-row items-center space-x-4 pb-2">
@@ -58,6 +62,12 @@ const TeacherDashboard = () => {
             </p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Two Column Layout for Announcements and Students */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Announcements />
+        <StudentList />
       </div>
     </DashboardLayout>
   );
