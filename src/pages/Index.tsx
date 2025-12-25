@@ -26,7 +26,7 @@ const Index = () => {
         </p>
 
         {/* Button */}
-        <Button size="lg" className="mt-4">
+        <Button size="lg" className="mt-4" onClick={() => window.location.href = '/auth'}>
           Get Started
         </Button>
       </div>
